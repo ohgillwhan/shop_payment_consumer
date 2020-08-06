@@ -12,6 +12,10 @@ public class ItemDTO {
     public static class Request {
         private Long categoryId;
         private String name;
+        private String contents;
+        private String deliveryDescription;
+        private Long price;
+        private Long discount;
     }
     @Data
     @NoArgsConstructor @Builder @AllArgsConstructor
@@ -19,13 +23,23 @@ public class ItemDTO {
         private Long id;
         private Long categoryId;
         private String name;
+        private String contents;
+        private String deliveryDescription;
+        private Long price;
+        private Long discount;
+        private Long discountPrice;
 
         public static Response of(Item item) {
             Response response = new Response();
 
-            response.setCategoryId(item.getCategory().getId());
-            response.setId(item.getId());
-            response.setName(item.getName());
+            response.categoryId = item.getCategory().getId();
+            response.id = item.getId();
+            response.name = item.getName();
+            response.contents = item.getContents();
+            response.deliveryDescription = item.getDeliveryDescription();
+            response.price = item.getPrice();
+            response.discount = item.getDiscount();
+            response.discountPrice = item.getDiscountPrice();
 
             return response;
         }
