@@ -36,4 +36,35 @@ public class ItemOrderDetailDTO {
             return responseFromOrder;
         }
     }
+    @Data
+    public static class Response {
+        private long id;
+        private Long optionId;
+        private long itemId;
+        private long amount;
+        private long discountAmount;
+        private long payAmount;
+
+        public static Response of(ItemOrderDetail itemOrderDetail) {
+            Response response = new Response();
+
+            response.id = itemOrderDetail.getId();
+            response.itemId = itemOrderDetail.getItem().getId();
+            response.amount = itemOrderDetail.getAmount();
+            response.discountAmount = itemOrderDetail.getDiscountAmount();
+            response.payAmount = itemOrderDetail.getPayAmount();
+
+            if(itemOrderDetail.getItemOption() != null) {
+                response.optionId = itemOrderDetail.getItemOption().getId();
+            }
+
+            return response;
+        }
+    }
+    @Data
+    @NoArgsConstructor @AllArgsConstructor @Builder
+    public static class RequestCancel {
+        private long orderId;
+        private long detailId;
+    }
 }

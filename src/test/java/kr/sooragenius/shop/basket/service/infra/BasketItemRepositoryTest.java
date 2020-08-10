@@ -82,7 +82,7 @@ class BasketItemRepositoryTest {
             Item item = itemRepository.findById(itemId).get();
 
             assertEquals(basket.getId(), basketItem.getBasket().getId());
-            assertEquals(item.getId(), basketItem.getId());
+            assertEquals(item.getId(), basketItem.getItem().getId());
         });
     }
 

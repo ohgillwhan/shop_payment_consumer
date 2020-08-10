@@ -14,6 +14,7 @@ import kr.sooragenius.shop.order.dto.ItemOrderDetailDTO;
 import kr.sooragenius.shop.order.service.infra.ItemOrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,6 +27,7 @@ public class ItemOrderService {
     private final ItemOptionRepository itemOptionRepository;
     private final MemberRepository memberRepository;
 
+    @Transactional
     public ItemOrderDTO.Response order(ItemOrderDTO.Request request) {
         Member member = memberRepository.findById(request.getMemberId()).orElseThrow(() -> new IllegalArgumentException("존재하지 않는 계정입니다"));
 
@@ -34,7 +36,7 @@ public class ItemOrderService {
 
         ItemOrder itemOrder = ItemOrder.of(member);
 
-        List<ItemOrderDetailDTO.ResponseFromOrder> orderDetails = orderDetailRequests.stream().map(detailRequest -> {
+        orderDetailRequests.stream().map(detailRequest -> {
             Item item = itemRepository.findById(detailRequest.getItemId()).orElseThrow(() -> new IllegalArgumentException("존재하지 않는 상품입니다"));
 
             ItemOption itemOption = null;
@@ -49,5 +51,12 @@ public class ItemOrderService {
         itemOrderRepository.save(itemOrder);
 
         return ItemOrderDTO.Response.of(itemOrder, itemOrder.getItemOrderDetails());
+    }
+
+    @Transactional
+    public ItemOrderDetailDTO.Response cancelDetail(ItemOrderDetailDTO.RequestCancel request) {
+        ItemOrder itemOrder = itemOrderRepository.findById(request.getOrderId()).orElseThrow(() -> new IllegalArgumentException("존재하지 않는 주문입니다"));
+
+        return itemOrder.cancelOrderDetail(request.getDetailId());
     }
 }

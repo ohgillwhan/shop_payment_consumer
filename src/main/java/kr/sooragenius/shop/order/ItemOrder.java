@@ -44,11 +44,22 @@ public class ItemOrder {
 
         return ItemOrderDetailDTO.ResponseFromOrder.of(detail);
     }
-    public void removeOrderDetails(ItemOrderDetail detail) {
-        getItemOrderDetails().remove(detail);
+    public ItemOrderDetailDTO.Response cancelOrderDetail(long detailId) {
+        ItemOrderDetail itemOrderDetail = findById(detailId);
 
-        totalAmount -= detail.getAmount();
-        totalDiscountAmount -= detail.getDiscountAmount();
-        totalPayAmount -= detail.getPayAmount();
+        getItemOrderDetails().remove(itemOrderDetail);
+
+        totalAmount -= itemOrderDetail.getAmount();
+        totalDiscountAmount -= itemOrderDetail.getDiscountAmount();
+        totalPayAmount -= itemOrderDetail.getPayAmount();
+
+        return ItemOrderDetailDTO.Response.of(itemOrderDetail);
+    }
+
+    private ItemOrderDetail findById(long id) {
+        return getItemOrderDetails().stream()
+                .filter(item -> item.getId().equals(id))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 상세정보 입니다"));
     }
 }

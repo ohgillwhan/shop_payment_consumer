@@ -121,13 +121,6 @@ class ItemOrderRepositoryTest {
                 .build();
         return itemRepository.save(Item.of(build, category));
     }
-    private ItemOption addItemOption(Item item) {
-        ItemOptionDTO.Request build = ItemOptionDTO.Request.builder()
-                .name("다크")
-                .premium(10L)
-                .build();
-        return itemOptionRepository.save(ItemOption.of(build, item));
-    }
     private Member addMember() {
         MemberDTO.Request request = MemberDTO.Request.builder().authority(MemberAuthority.ROLE_ADMIN).id("A1").name("A1").password("A1").build();
 
