@@ -289,29 +289,42 @@ class ItemOrderServiceTest {
         Item whiteKakao = createItem(2L, "whiteKakao", 5000L, 333L);
         Item pinkKakao = createItem(3L, "pinkKakao", 4000L, 250L);
 
+        ItemOption blackKakaoOption = createItemOption(blackKakao, 1L,"두배로!", 500L);
+
         // when
         itemOrder.addOrderDetails(blackKakao, null);
         itemOrder.addOrderDetails(whiteKakao, null);
         itemOrder.addOrderDetails(pinkKakao, null);
+        itemOrder.addOrderDetails(blackKakao, blackKakaoOption);
 
         ReflectionTestUtils.setField(itemOrder.getItemOrderDetails().get(0), "id", 1L);
         ReflectionTestUtils.setField(itemOrder.getItemOrderDetails().get(1), "id", 2L);
         ReflectionTestUtils.setField(itemOrder.getItemOrderDetails().get(2), "id", 3L);
+        ReflectionTestUtils.setField(itemOrder.getItemOrderDetails().get(3), "id", 4L);
+
+        when(itemOptionRepository.findById(1L))
+                .thenReturn(Optional.of(blackKakaoOption));
 
         ItemOrderDetailDTO.Response response = itemOrder.cancelOrderDetail(2L);
+        itemOrder.cancelOrderDetail(4L);
         // then
-        long itemTotalPayAmount = blackKakao.getPayAmount() + pinkKakao.getPayAmount() + whiteKakao.getPayAmount();
-        long itemTotalAmount = blackKakao.getAmount() + pinkKakao.getAmount() + whiteKakao.getAmount();
+        long itemTotalPayAmount = blackKakao.getPayAmount() + pinkKakao.getPayAmount() + whiteKakao.getPayAmount() + blackKakao.getPayAmount() + blackKakaoOption.getPremium();
+        long itemTotalAmount = blackKakao.getAmount() + pinkKakao.getAmount() + whiteKakao.getAmount() + blackKakao.getAmount() + blackKakaoOption.getPremium();
         long itemTotalDiscount = blackKakao.getDiscountAmount() + pinkKakao.getDiscountAmount() + whiteKakao.getDiscountAmount();
 
         assertEquals(blackKakao, itemOrder.getItemOrderDetails().get(0).getItem());
         assertEquals(pinkKakao, itemOrder.getItemOrderDetails().get(1).getItem());
+
         assertEquals(whiteKakao.getPayAmount(), response.getPayAmount());
         assertEquals(whiteKakao.getAmount(), response.getAmount());
         assertEquals(whiteKakao.getDiscountAmount(), response.getDiscountAmount());
-        assertEquals(itemTotalPayAmount - whiteKakao.getPayAmount(), itemOrder.getTotalPayAmount());
-        assertEquals(itemTotalAmount - whiteKakao.getAmount(), itemOrder.getTotalAmount());
-        assertEquals(itemTotalDiscount - whiteKakao.getDiscountAmount(), itemOrder.getTotalDiscountAmount());
+
+        assertEquals(itemTotalPayAmount - whiteKakao.getPayAmount() - blackKakao.getPayAmount() - blackKakaoOption.getPremium()
+                , itemOrder.getTotalPayAmount());
+        assertEquals(itemTotalAmount - whiteKakao.getAmount() - blackKakao.getAmount() - blackKakaoOption.getPremium()
+                , itemOrder.getTotalAmount());
+        assertEquals(itemTotalDiscount - whiteKakao.getDiscountAmount()
+                , itemOrder.getTotalDiscountAmount());
     }
     private MemberDTO.Request createMemberRequest() {
         return MemberDTO.Request.builder()
