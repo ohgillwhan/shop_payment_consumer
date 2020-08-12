@@ -68,8 +68,13 @@ class ItemRepositoryTest {
             assertEquals(value.getName(), byId.getName());
             assertEquals(category.getId(), byId.getCategory().getId());
             assertEquals(900L, byId.getPayAmount());
+
+            assertEquals(1, byId.getItemOptions().size());
+            assertEquals(0L, byId.getItemOptions().get(0).getPremium());
+            assertEquals("None", byId.getItemOptions().get(0).getName());
         });
     }
+
     private Category addTopCategory() {
         return categoryRepository.save(Category.of(CategoryDTO.Request.builder().name("TOP").build()));
     }

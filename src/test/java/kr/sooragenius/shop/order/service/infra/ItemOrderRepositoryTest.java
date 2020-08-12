@@ -47,18 +47,21 @@ class ItemOrderRepositoryTest {
     private final EntityManager entityManager;
 
 
-    @DisplayName("주문")
+    @DisplayName("주문 과 이벤트 실행")
     @Test
     @Transactional
-    public void addOrderWithoutOption() throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException {
+    public void addOrderAndPublishEventWithoutOption() throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException {
 
         // given
         Category category = addTopCategory();
         Item item = addItem(category);
         Member member = addMember();
+        ItemOrder itemOrder = ItemOrder.of(member);
 
         // when
-        ItemOrder itemOrder = itemOrderRepository.save(ItemOrder.of(member));
+        itemOrder.publishItemOrderEvent();
+        itemOrder = itemOrderRepository.save(itemOrder);
+
         List<ItemOrderDetail> itemOrderDetails = Arrays.asList(
                 createItemOrderDetail(item, null, itemOrder),
                 createItemOrderDetail(item, null, itemOrder),

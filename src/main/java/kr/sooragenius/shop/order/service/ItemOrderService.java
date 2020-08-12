@@ -48,6 +48,7 @@ public class ItemOrderService {
             return itemOrder.addOrderDetails(item, itemOption);
         }).collect(Collectors.toList());
 
+        itemOrder.publishItemOrderEvent();
         itemOrderRepository.save(itemOrder);
 
         return ItemOrderDTO.Response.of(itemOrder, itemOrder.getItemOrderDetails());

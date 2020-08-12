@@ -19,6 +19,8 @@ public class ItemOption {
     @JoinColumn(name = "ITME_ID", referencedColumnName = "ITEM_ID")
     private Item item;
 
+    private Long stock = 0L;
+
     public static ItemOption of(ItemOptionDTO.Request request, Item item) {
         ItemOption itemOption = new ItemOption();
         itemOption.name = request.getName();
@@ -26,6 +28,10 @@ public class ItemOption {
         itemOption.item = item;
 
         return itemOption;
+    }
+    public static ItemOption createNoneOption(Item item) {
+        ItemOptionDTO.Request request = new ItemOptionDTO.Request("None", 0L);
+        return of(request, item);
     }
 
 

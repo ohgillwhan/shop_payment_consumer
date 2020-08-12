@@ -4,6 +4,7 @@ import kr.sooragenius.shop.item.dto.ItemDTO;
 import kr.sooragenius.shop.category.Category;
 import kr.sooragenius.shop.review.Review;
 import lombok.Getter;
+import org.springframework.data.domain.AbstractAggregateRoot;
 import org.springframework.data.jpa.domain.AbstractAuditable;
 
 import javax.persistence.*;
@@ -12,7 +13,6 @@ import java.util.List;
 
 @Entity
 @Getter
-
 public class Item {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ITEM_ID")
@@ -31,7 +31,7 @@ public class Item {
     @OneToMany(cascade = CascadeType.REMOVE, mappedBy = "item")
     private List<Review> reviews = new ArrayList<>();
 
-    @OneToMany(cascade = CascadeType.REMOVE, mappedBy = "item")
+    @OneToMany(cascade = {CascadeType.REMOVE, CascadeType.PERSIST}, mappedBy = "item")
     private List<ItemOption> itemOptions = new ArrayList<>();
 
     public static Item of(ItemDTO.Request request, Category category) {
@@ -46,6 +46,7 @@ public class Item {
 
         item.category = category;
 
+        item.itemOptions.add(ItemOption.createNoneOption(item));
         return item;
     }
 }
