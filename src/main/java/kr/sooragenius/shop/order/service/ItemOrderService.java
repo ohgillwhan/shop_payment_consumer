@@ -2,6 +2,7 @@ package kr.sooragenius.shop.order.service;
 
 import kr.sooragenius.shop.item.Item;
 import kr.sooragenius.shop.item.ItemOption;
+import kr.sooragenius.shop.item.dto.ItemDTO;
 import kr.sooragenius.shop.item.service.infra.ItemOptionRepository;
 import kr.sooragenius.shop.item.service.infra.ItemRepository;
 import kr.sooragenius.shop.member.Member;
@@ -11,8 +12,10 @@ import kr.sooragenius.shop.order.ItemOrder;
 import kr.sooragenius.shop.order.ItemOrderDetail;
 import kr.sooragenius.shop.order.dto.ItemOrderDTO;
 import kr.sooragenius.shop.order.dto.ItemOrderDetailDTO;
+import kr.sooragenius.shop.order.dto.ItemOrderEventDTO;
 import kr.sooragenius.shop.order.service.infra.ItemOrderRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +29,7 @@ public class ItemOrderService {
     private final ItemOrderRepository itemOrderRepository;
     private final ItemOptionRepository itemOptionRepository;
     private final MemberRepository memberRepository;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Transactional
     public ItemOrderDTO.Response order(ItemOrderDTO.Request request) {
@@ -45,10 +49,11 @@ public class ItemOrderService {
                 itemOption = itemOptionRepository.findById(optionId).orElseThrow(() -> new IllegalArgumentException("존재하지 않는 옵션입니다."));
             }
 
+            applicationEventPublisher.publishEvent(ItemOrderEventDTO.NewItemOrder.of(detailRequest));
+
             return itemOrder.addOrderDetails(item, itemOption);
         }).collect(Collectors.toList());
 
-        itemOrder.publishItemOrderEvent();
         itemOrderRepository.save(itemOrder);
 
         return ItemOrderDTO.Response.of(itemOrder, itemOrder.getItemOrderDetails());

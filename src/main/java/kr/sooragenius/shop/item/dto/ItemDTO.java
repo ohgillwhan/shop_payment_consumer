@@ -16,6 +16,7 @@ public class ItemDTO {
         private String deliveryDescription;
         private Long amount;
         private Long discountAmount;
+        private Long stock;
     }
     @Data
     @NoArgsConstructor @Builder @AllArgsConstructor
@@ -28,6 +29,7 @@ public class ItemDTO {
         private Long amount;
         private Long discountAmount;
         private Long payAmount;
+        private Long stock;
 
         public static Response of(Item item) {
             Response response = new Response();
@@ -40,8 +42,16 @@ public class ItemDTO {
             response.amount = item.getAmount();
             response.discountAmount = item.getDiscountAmount();
             response.payAmount = item.getPayAmount();
+            response.stock = item.getStock();
 
             return response;
         }
+    }
+
+    @Data
+    @NoArgsConstructor @Builder @AllArgsConstructor
+    public static class StockUpdate {
+        private Long id;
+        private Long addStock;
     }
 }

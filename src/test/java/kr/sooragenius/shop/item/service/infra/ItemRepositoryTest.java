@@ -74,6 +74,44 @@ class ItemRepositoryTest {
             assertEquals("None", byId.getItemOptions().get(0).getName());
         });
     }
+    @Test
+    @Transactional
+    @DisplayName("재고 부족시 에러")
+    public void errorMinusStockByIdWithLock() {
+        // given
+        Category category = addTopCategory();
+
+        ItemDTO.Request itemKakaoRequest = ItemDTO.Request.builder().name("Kakao").amount(1000L).discountAmount(100L).stock(1L).build();
+        Item itemKakao = Item.of(itemKakaoRequest, category);
+
+        Long kakaoId = itemRepository.save(itemKakao).getId();
+        flush();
+        // when
+        long l = itemRepository.minusStockByIdWithLock(kakaoId, 2L);
+
+        // then
+
+        assertTrue(l == 0);
+    }
+
+    @Test
+    @Transactional
+    @DisplayName("재고 충분할경우")
+    public void minusStockByIdWithLock() {
+        // given
+        Category category = addTopCategory();
+
+        ItemDTO.Request itemKakaoRequest = ItemDTO.Request.builder().name("Kakao").amount(1000L).discountAmount(100L).stock(2L).build();
+        Item itemKakao = Item.of(itemKakaoRequest, category);
+
+        Long kakaoId = itemRepository.save(itemKakao).getId();
+        flush();
+        // when
+        long l = itemRepository.minusStockByIdWithLock(kakaoId, 2L);
+
+        // then
+        assertTrue(l == 1);
+    }
 
     private Category addTopCategory() {
         return categoryRepository.save(Category.of(CategoryDTO.Request.builder().name("TOP").build()));

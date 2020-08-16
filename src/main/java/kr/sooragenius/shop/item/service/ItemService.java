@@ -32,4 +32,11 @@ public class ItemService {
         Item item = itemRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("존재하지 않는 상품입니다"));
         return item;
     }
+
+    public void minusStockById(ItemDTO.StockUpdate stockUpdate) {
+        int count = itemRepository.minusStockByIdWithLock(stockUpdate.getId(), -stockUpdate.getAddStock());
+        System.out.println(stockUpdate.getId());
+        System.out.println(stockUpdate.getAddStock());
+        if(count == 0) throw new RuntimeException("재고가 부족합니다.");
+    }
 }

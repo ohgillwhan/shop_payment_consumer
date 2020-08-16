@@ -23,6 +23,7 @@ public class Item {
     private Long amount; // 원가
     private Long discountAmount; // 할인
     private Long payAmount; // 할인된 가격
+    private Long stock;
 
     @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
     @JoinColumn(referencedColumnName = "CATEGORY_ID", name = "CATEGORY_ID")
@@ -43,6 +44,7 @@ public class Item {
         item.amount = request.getAmount();
         item.discountAmount = request.getDiscountAmount();
         item.payAmount = request.getAmount() - request.getDiscountAmount();
+        item.stock = request.getStock();
 
         item.category = category;
 

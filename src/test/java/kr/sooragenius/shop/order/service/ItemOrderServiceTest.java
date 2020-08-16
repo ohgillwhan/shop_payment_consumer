@@ -4,6 +4,7 @@ import kr.sooragenius.shop.item.Item;
 import kr.sooragenius.shop.item.ItemOption;
 import kr.sooragenius.shop.item.dto.ItemDTO;
 import kr.sooragenius.shop.item.dto.ItemOptionDTO;
+import kr.sooragenius.shop.item.service.ItemService;
 import kr.sooragenius.shop.item.service.infra.ItemOptionRepository;
 import kr.sooragenius.shop.item.service.infra.ItemRepository;
 import kr.sooragenius.shop.member.Member;
@@ -23,6 +24,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -33,14 +36,14 @@ import java.util.Arrays;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 class ItemOrderServiceTest {
-    @Mock
+    @MockBean
     private ItemRepository itemRepository;
     @Mock
     private ItemOrderRepository itemOrderRepository;
@@ -49,12 +52,14 @@ class ItemOrderServiceTest {
     @Mock
     private MemberRepository memberRepository;
 
+
     private ItemOrderService itemOrderService;
     private final PasswordEncoder passwordEncoder;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @BeforeEach
     public void test() {
-        itemOrderService = new ItemOrderService(itemRepository, itemOrderRepository, itemOptionRepository, memberRepository);
+        itemOrderService = new ItemOrderService(itemRepository, itemOrderRepository, itemOptionRepository, memberRepository, applicationEventPublisher);
     }
     @Test
     @DisplayName("order - 계정 없을시 에러")
@@ -136,6 +141,63 @@ class ItemOrderServiceTest {
         assertTrue(runtimeException.getMessage().contains("존재하지 않는 옵션입니다"));
     }
     @Test
+    @DisplayName("order - 재고부족")
+    @Transactional
+    void orderNoStockInItem() {
+        // given
+        MemberDTO.Request memberRequest = createMemberRequest();
+        Item blackKakao = createItem(1L, "blackKakao", 1000L, 100L, 0L);
+
+
+        ItemOrderDTO.Request request = ItemOrderDTO.Request.builder()
+                .memberId(memberRequest.getId())
+                .orderDetailRequests(Arrays.asList(
+                        ItemOrderDetailDTO.Request.builder().itemId(1L).optionId(null).build()
+                ))
+                .build();
+
+        // when
+        when(memberRepository.findById(memberRequest.getId()))
+                .thenReturn(Optional.of(Member.of(memberRequest, passwordEncoder)));
+        when(itemRepository.findById(1L))
+                .thenReturn(Optional.of(blackKakao));
+        when(itemRepository.minusStockByIdWithLock(eq(1L), anyLong()))
+                .thenReturn(0);
+
+        // then
+        RuntimeException runtimeException = assertThrows(RuntimeException.class, () -> itemOrderService.order(request));
+
+        assertTrue(runtimeException.getMessage().contains("재고가 부족합니다."));
+    }
+    @Test
+    @DisplayName("order - 재고충")
+    @Transactional
+    void orderStockExistsInItem() {
+        // given
+        MemberDTO.Request memberRequest = createMemberRequest();
+        Item blackKakao = createItem(1L, "blackKakao", 1000L, 100L, 2L);
+
+
+        ItemOrderDTO.Request request = ItemOrderDTO.Request.builder()
+                .memberId(memberRequest.getId())
+                .orderDetailRequests(Arrays.asList(
+                        ItemOrderDetailDTO.Request.builder().itemId(1L).optionId(null).build()
+                ))
+                .build();
+
+        // when
+        when(memberRepository.findById(memberRequest.getId()))
+                .thenReturn(Optional.of(Member.of(memberRequest, passwordEncoder)));
+        when(itemRepository.findById(1L))
+                .thenReturn(Optional.of(blackKakao));
+        when(itemRepository.minusStockByIdWithLock(eq(1L), anyLong()))
+                .thenReturn(1);
+
+        // then
+        System.out.println(itemRepository.minusStockByIdWithLock(1L, 1L));
+        itemOrderService.order(request);
+    }
+    @Test
     @DisplayName("order - 옵션없이")
     void orderWithoutOption() {
         // given
@@ -163,6 +225,8 @@ class ItemOrderServiceTest {
                 .thenReturn(Optional.of(whiteKakao));
         when(itemRepository.findById(3L))
                 .thenReturn(Optional.of(pinkKakao));
+        when(itemRepository.minusStockByIdWithLock(anyLong(), anyLong()))
+                .thenReturn(1);
 
         ItemOrderDTO.Response order = itemOrderService.order(request);
 
@@ -211,6 +275,9 @@ class ItemOrderServiceTest {
                 .thenReturn(Optional.of(pinkKakao));
         when(itemOptionRepository.findById(1L))
                 .thenReturn(Optional.of(blackKakaoOption));
+        when(itemRepository.minusStockByIdWithLock(anyLong(), anyLong()))
+                .thenReturn(1);
+
 
         ItemOrderDTO.Response order = itemOrderService.order(request);
 
@@ -336,10 +403,15 @@ class ItemOrderServiceTest {
     }
 
     private Item createItem(Long id, String name, Long amount, Long discountAmount) {
+
+        return createItem(id, name, amount, discountAmount, 1L);
+    }
+    private Item createItem(Long id, String name, Long amount, Long discountAmount, long stock) {
         ItemDTO.Request build = ItemDTO.Request.builder()
                 .name(name)
                 .amount(amount)
                 .discountAmount(discountAmount)
+                .stock(stock)
                 .build();
 
         Item item = Item.of(build, null);

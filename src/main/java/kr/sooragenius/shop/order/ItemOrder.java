@@ -4,7 +4,6 @@ import kr.sooragenius.shop.item.Item;
 import kr.sooragenius.shop.item.ItemOption;
 import kr.sooragenius.shop.member.Member;
 import kr.sooragenius.shop.order.dto.ItemOrderDetailDTO;
-import kr.sooragenius.shop.order.event.ItemOrderEvent;
 import lombok.Getter;
 import org.springframework.data.domain.AbstractAggregateRoot;
 
@@ -14,7 +13,7 @@ import java.util.List;
 
 @Entity
 @Getter
-public class ItemOrder extends AbstractAggregateRoot<ItemOrder> {
+public class ItemOrder {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ITEM_ORDER_ID")
     private Long id;
@@ -66,11 +65,5 @@ public class ItemOrder extends AbstractAggregateRoot<ItemOrder> {
                 .filter(item -> item.getId().equals(id))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 상세정보 입니다"));
-    }
-
-    public ItemOrder publishItemOrderEvent() {
-        this.registerEvent(new ItemOrderEvent(this));
-
-        return this;
     }
 }
