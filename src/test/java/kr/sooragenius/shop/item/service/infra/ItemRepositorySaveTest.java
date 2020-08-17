@@ -20,26 +20,27 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.given;
 
 @SpringBootTest
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
-class ItemRepositoryTest {
+class ItemRepositorySaveTest {
     private final CategoryRepository categoryRepository;
     private final ItemRepository itemRepository;
     private final EntityManager entityManager;
 
     @Test
     @Transactional
-    @DisplayName("상품 저장")
+    @DisplayName("상품 저장 후 flush 그리고 정상저장 확")
     void addItem() {
         // given
         Category category = addTopCategory();
 
-        ItemDTO.Request itemKakaoRequest = ItemDTO.Request.builder().name("Kakao").amount(1000L).discountAmount(100L).build();
-        ItemDTO.Request itemClockRequest = ItemDTO.Request.builder().name("Clock").amount(1000L).discountAmount(100L).build();
-        ItemDTO.Request itemPenRequest = ItemDTO.Request.builder().name("Pen").amount(1000L).discountAmount(100L).build();
+        ItemDTO.Request itemKakaoRequest = ItemDTO.Request.builder().name("Kakao").amount(1000L).discountAmount(100L).stock(1L).build();
+        ItemDTO.Request itemClockRequest = ItemDTO.Request.builder().name("Clock").amount(1000L).discountAmount(100L).stock(1L).build();
+        ItemDTO.Request itemPenRequest = ItemDTO.Request.builder().name("Pen").amount(1000L).discountAmount(100L).stock(1L).build();
 
         Item itemKakao = Item.of(itemKakaoRequest, category);
         Item itemClock = Item.of(itemClockRequest, category);
@@ -64,53 +65,30 @@ class ItemRepositoryTest {
 
             Item byId = itemRepository.findById(key).get();
 
-            assertEquals(key, byId.getId());
-            assertEquals(value.getName(), byId.getName());
-            assertEquals(category.getId(), byId.getCategory().getId());
-            assertEquals(900L, byId.getPayAmount());
+            assertThat(byId.getId())
+                    .isGreaterThan(0L)
+                    .isEqualTo(key);
 
-            assertEquals(1, byId.getItemOptions().size());
-            assertEquals(0L, byId.getItemOptions().get(0).getPremium());
-            assertEquals("None", byId.getItemOptions().get(0).getName());
+            assertThat(byId.getName())
+                    .isNotEmpty()
+                    .isEqualTo(value.getName());
+
+            assertThat(byId.getCategory().getId())
+                    .isGreaterThan(0L)
+                    .isEqualTo(category.getId());
+
+            assertThat(byId.getPayAmount())
+                    .isEqualTo(900L);
+
+            assertThat(byId.getItemOptions().size())
+                    .isEqualTo(1);
+
+            assertThat(byId.getItemOptions().get(0).getPremium())
+                    .isEqualTo(0L);
+
+            assertThat(byId.getItemOptions().get(0).getName())
+                    .isEqualTo("None");
         });
-    }
-    @Test
-    @Transactional
-    @DisplayName("재고 부족시 에러")
-    public void errorMinusStockByIdWithLock() {
-        // given
-        Category category = addTopCategory();
-
-        ItemDTO.Request itemKakaoRequest = ItemDTO.Request.builder().name("Kakao").amount(1000L).discountAmount(100L).stock(1L).build();
-        Item itemKakao = Item.of(itemKakaoRequest, category);
-
-        Long kakaoId = itemRepository.save(itemKakao).getId();
-        flush();
-        // when
-        long l = itemRepository.minusStockByIdWithLock(kakaoId, 2L);
-
-        // then
-
-        assertTrue(l == 0);
-    }
-
-    @Test
-    @Transactional
-    @DisplayName("재고 충분할경우")
-    public void minusStockByIdWithLock() {
-        // given
-        Category category = addTopCategory();
-
-        ItemDTO.Request itemKakaoRequest = ItemDTO.Request.builder().name("Kakao").amount(1000L).discountAmount(100L).stock(2L).build();
-        Item itemKakao = Item.of(itemKakaoRequest, category);
-
-        Long kakaoId = itemRepository.save(itemKakao).getId();
-        flush();
-        // when
-        long l = itemRepository.minusStockByIdWithLock(kakaoId, 2L);
-
-        // then
-        assertTrue(l == 1);
     }
 
     private Category addTopCategory() {

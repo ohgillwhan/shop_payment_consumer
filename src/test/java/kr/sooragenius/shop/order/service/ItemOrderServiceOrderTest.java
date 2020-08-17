@@ -35,6 +35,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Arrays;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
@@ -42,12 +43,12 @@ import static org.mockito.Mockito.when;
 
 @SpringBootTest
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
-class ItemOrderServiceTest {
-    @MockBean
+class ItemOrderServiceOrderTest {
+    @Mock
     private ItemRepository itemRepository;
     @Mock
     private ItemOrderRepository itemOrderRepository;
-    @Mock
+    @MockBean
     private ItemOptionRepository itemOptionRepository;
     @Mock
     private MemberRepository memberRepository;
@@ -58,14 +59,15 @@ class ItemOrderServiceTest {
     private final ApplicationEventPublisher applicationEventPublisher;
 
     @BeforeEach
-    public void test() {
+    public void beforeEach() {
         itemOrderService = new ItemOrderService(itemRepository, itemOrderRepository, itemOptionRepository, memberRepository, applicationEventPublisher);
     }
     @Test
     @DisplayName("order - 계정 없을시 에러")
+    @Transactional
     void orderMemberError() {
         // given
-        Item blackKakao = createItem(1L, "blackKakao", 1000L, 100L);
+        Item blackKakao = createItem(1L, 1L, "blackKakao", 1000L, 100L);
         ItemOrderDTO.Request request = ItemOrderDTO.Request.builder()
                 .orderDetailRequests(Arrays.asList(
                         ItemOrderDetailDTO.Request.builder().itemId(1L).optionId(null).build()
@@ -76,11 +78,13 @@ class ItemOrderServiceTest {
                 .thenReturn(Optional.of(blackKakao));
 
         // then
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> itemOrderService.order(request));
-        assertTrue(illegalArgumentException.getMessage().contains("존재하지 않는 계정입니다"));
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> itemOrderService.order(request))
+                .withMessageContaining("존재하지 않는 계정입니다");
     }
     @Test
     @DisplayName("order - 구매할 물품이 없을시 에러")
+    @Transactional
     void orderNoOrderDetailsError() {
         // given
         MemberDTO.Request memberRequest = createMemberRequest();
@@ -93,11 +97,13 @@ class ItemOrderServiceTest {
                 .thenReturn(Optional.of(Member.of(memberRequest, passwordEncoder)));
 
         // then
-        RuntimeException runtimeException = assertThrows(RuntimeException.class, () -> itemOrderService.order(request));
-        assertTrue(runtimeException.getMessage().contains("구매할 물품이 없습니다"));
+        assertThatExceptionOfType(RuntimeException.class)
+                .isThrownBy(() -> itemOrderService.order(request))
+                .withMessageContaining("구매할 물품이 없습니다");
     }
     @Test
     @DisplayName("order - 없는 물건 구매하려고 할 경우")
+    @Transactional
     void orderNotExistItemError() {
         // given
         MemberDTO.Request memberRequest = createMemberRequest();
@@ -113,16 +119,18 @@ class ItemOrderServiceTest {
                 .thenReturn(Optional.of(Member.of(memberRequest, passwordEncoder)));
 
         // then
-        RuntimeException runtimeException = assertThrows(RuntimeException.class, () -> itemOrderService.order(request));
-        assertTrue(runtimeException.getMessage().contains("존재하지 않는 상품입니다"));
+        assertThatExceptionOfType(RuntimeException.class)
+                .isThrownBy(() -> itemOrderService.order(request))
+                .withMessageContaining("존재하지 않는 상품입니다");
     }
     @Test
     @DisplayName("order - 없는 옵션으로 구매하려고 할 경우")
+    @Transactional
     void orderNotExistOptionError() {
         // given
         MemberDTO.Request memberRequest = createMemberRequest();
 
-        Item blackKakao = createItem(1L, "blackKakao", 1000L, 100L);
+        Item blackKakao = createItem(1L, 1L, "blackKakao", 1000L, 100L);
 
         ItemOrderDTO.Request request = ItemOrderDTO.Request.builder()
                 .memberId(memberRequest.getId())
@@ -137,8 +145,9 @@ class ItemOrderServiceTest {
                 .thenReturn(Optional.of(blackKakao));
 
         // then
-        RuntimeException runtimeException = assertThrows(RuntimeException.class, () -> itemOrderService.order(request));
-        assertTrue(runtimeException.getMessage().contains("존재하지 않는 옵션입니다"));
+        assertThatExceptionOfType(RuntimeException.class)
+                .isThrownBy(() -> itemOrderService.order(request))
+                .withMessageContaining("존재하지 않는 옵션입니다");
     }
     @Test
     @DisplayName("order - 재고부족")
@@ -146,13 +155,13 @@ class ItemOrderServiceTest {
     void orderNoStockInItem() {
         // given
         MemberDTO.Request memberRequest = createMemberRequest();
-        Item blackKakao = createItem(1L, "blackKakao", 1000L, 100L, 0L);
+        Item blackKakao = createItem(1L, 1L,"blackKakao", 1000L, 100L, 0L);
 
 
         ItemOrderDTO.Request request = ItemOrderDTO.Request.builder()
                 .memberId(memberRequest.getId())
                 .orderDetailRequests(Arrays.asList(
-                        ItemOrderDetailDTO.Request.builder().itemId(1L).optionId(null).build()
+                        ItemOrderDetailDTO.Request.builder().itemId(1L).optionId(1L).build()
                 ))
                 .build();
 
@@ -161,13 +170,15 @@ class ItemOrderServiceTest {
                 .thenReturn(Optional.of(Member.of(memberRequest, passwordEncoder)));
         when(itemRepository.findById(1L))
                 .thenReturn(Optional.of(blackKakao));
-        when(itemRepository.minusStockByIdWithLock(eq(1L), anyLong()))
+        when(itemOptionRepository.findById(1L))
+                .thenReturn(Optional.of(blackKakao.getItemOptions().get(0)));
+        when(itemOptionRepository.minusStockByIdWithLock(anyLong(), anyLong()))
                 .thenReturn(0);
 
         // then
-        RuntimeException runtimeException = assertThrows(RuntimeException.class, () -> itemOrderService.order(request));
-
-        assertTrue(runtimeException.getMessage().contains("재고가 부족합니다."));
+        assertThatExceptionOfType(RuntimeException.class)
+                .isThrownBy(() -> itemOrderService.order(request))
+                .withMessageContaining("재고가 부족합니다.");
     }
     @Test
     @DisplayName("order - 재고충")
@@ -175,13 +186,13 @@ class ItemOrderServiceTest {
     void orderStockExistsInItem() {
         // given
         MemberDTO.Request memberRequest = createMemberRequest();
-        Item blackKakao = createItem(1L, "blackKakao", 1000L, 100L, 2L);
+        Item blackKakao = createItem(1L, 1L,"blackKakao", 1000L, 100L, 2L);
 
 
         ItemOrderDTO.Request request = ItemOrderDTO.Request.builder()
                 .memberId(memberRequest.getId())
                 .orderDetailRequests(Arrays.asList(
-                        ItemOrderDetailDTO.Request.builder().itemId(1L).optionId(null).build()
+                        ItemOrderDetailDTO.Request.builder().itemId(1L).optionId(1L).build()
                 ))
                 .build();
 
@@ -190,29 +201,31 @@ class ItemOrderServiceTest {
                 .thenReturn(Optional.of(Member.of(memberRequest, passwordEncoder)));
         when(itemRepository.findById(1L))
                 .thenReturn(Optional.of(blackKakao));
-        when(itemRepository.minusStockByIdWithLock(eq(1L), anyLong()))
+        when(itemOptionRepository.findById(1L))
+                .thenReturn(Optional.of(blackKakao.getItemOptions().get(0)));
+        when(itemOptionRepository.minusStockByIdWithLock(anyLong(), anyLong()))
                 .thenReturn(1);
 
         // then
-        System.out.println(itemRepository.minusStockByIdWithLock(1L, 1L));
         itemOrderService.order(request);
     }
     @Test
     @DisplayName("order - 옵션없이")
+    @Transactional
     void orderWithoutOption() {
         // given
         MemberDTO.Request memberRequest = createMemberRequest();
-        Item blackKakao = createItem(1L, "blackKakao", 1000L, 100L);
-        Item whiteKakao = createItem(2L, "whiteKakao", 5000L, 333L);
-        Item pinkKakao = createItem(3L, "pinkKakao", 4000L, 250L);
+        Item blackKakao = createItem(1L, 1L, "blackKakao", 1000L, 100L);
+        Item whiteKakao = createItem(2L, 2L,"whiteKakao", 5000L, 333L);
+        Item pinkKakao = createItem(3L, 3L,"pinkKakao", 4000L, 250L);
 
 
         ItemOrderDTO.Request request = ItemOrderDTO.Request.builder()
                 .memberId(memberRequest.getId())
                 .orderDetailRequests(Arrays.asList(
-                        ItemOrderDetailDTO.Request.builder().itemId(1L).optionId(null).build(),
-                        ItemOrderDetailDTO.Request.builder().itemId(2L).optionId(null).build(),
-                        ItemOrderDetailDTO.Request.builder().itemId(3L).optionId(null).build()
+                        ItemOrderDetailDTO.Request.builder().itemId(1L).optionId(1L).build(),
+                        ItemOrderDetailDTO.Request.builder().itemId(2L).optionId(2L).build(),
+                        ItemOrderDetailDTO.Request.builder().itemId(3L).optionId(3L).build()
                 ))
                 .build();
 
@@ -225,33 +238,59 @@ class ItemOrderServiceTest {
                 .thenReturn(Optional.of(whiteKakao));
         when(itemRepository.findById(3L))
                 .thenReturn(Optional.of(pinkKakao));
-        when(itemRepository.minusStockByIdWithLock(anyLong(), anyLong()))
+        when(itemOptionRepository.findById(1L))
+                .thenReturn(Optional.of(blackKakao.getItemOptions().get(0)));
+        when(itemOptionRepository.findById(2L))
+                .thenReturn(Optional.of(whiteKakao.getItemOptions().get(0)));
+        when(itemOptionRepository.findById(3L))
+                .thenReturn(Optional.of(pinkKakao.getItemOptions().get(0)));
+        when(itemOptionRepository.minusStockByIdWithLock(anyLong(), anyLong()))
                 .thenReturn(1);
 
         ItemOrderDTO.Response order = itemOrderService.order(request);
 
         // then
-        assertEquals(blackKakao.getPayAmount() + pinkKakao.getPayAmount() + whiteKakao.getPayAmount(), order.getTotalPayAmount());
-        assertEquals(blackKakao.getAmount() + pinkKakao.getAmount() + whiteKakao.getAmount(), order.getTotalAmount());
-        assertEquals(blackKakao.getDiscountAmount() + pinkKakao.getDiscountAmount() + whiteKakao.getDiscountAmount(), order.getTotalDiscountAmount());
-        assertFalse(order.getOrderDetails().isEmpty());
-        assertEquals(request.getOrderDetailRequests().size(), order.getOrderDetails().size());
+        assertThat(order.getTotalPayAmount())
+                .isGreaterThan(0L)
+                .isEqualTo(blackKakao.getPayAmount() + pinkKakao.getPayAmount() + whiteKakao.getPayAmount());
+
+        assertThat(order.getTotalAmount())
+                .isGreaterThan(0L)
+                .isEqualTo(blackKakao.getAmount() + pinkKakao.getAmount() + whiteKakao.getAmount());
+
+        assertThat(order.getTotalDiscountAmount())
+                .isGreaterThan(0L)
+                .isEqualTo(blackKakao.getDiscountAmount() + pinkKakao.getDiscountAmount() + whiteKakao.getDiscountAmount());
+
+        assertThat(order.getOrderDetails().size())
+                .isGreaterThan(0)
+                .isEqualTo(request.getOrderDetailRequests().size());
+
         order.getOrderDetails().stream().forEach(detail -> {
             Item item = itemRepository.findById(detail.getItemId()).get();
 
-            assertEquals(item.getDiscountAmount(), detail.getDiscountAmount());
-            assertEquals(item.getPayAmount(), detail.getPayAmount());
-            assertEquals(item.getAmount(), detail.getAmount());
+            assertThat(detail.getDiscountAmount())
+                    .isGreaterThan(0L)
+                    .isEqualTo(item.getDiscountAmount());
+
+            assertThat(detail.getPayAmount())
+                    .isGreaterThan(0L)
+                    .isEqualTo(item.getPayAmount());
+
+            assertThat(detail.getAmount())
+                    .isGreaterThan(0L)
+                    .isEqualTo(item.getAmount());
         });
     }
     @Test
     @DisplayName("order - 옵션 추가하여")
+    @Transactional
     void orderWithOption() {
         // given
         MemberDTO.Request memberRequest = createMemberRequest();
-        Item blackKakao = createItem(1L, "blackKakao", 1000L, 100L);
-        Item whiteKakao = createItem(2L, "whiteKakao", 5000L, 333L);
-        Item pinkKakao = createItem(3L, "pinkKakao", 4000L, 250L);
+        Item blackKakao = createItem(1L, 1L,"blackKakao", 1000L, 100L);
+        Item whiteKakao = createItem(2L, 2L,"whiteKakao", 5000L, 333L);
+        Item pinkKakao = createItem(3L, 3L,"pinkKakao", 4000L, 250L);
 
         ItemOption blackKakaoOption = createItemOption(blackKakao, 1L,"두배로!", 500L);
 
@@ -259,8 +298,8 @@ class ItemOrderServiceTest {
                 .memberId(memberRequest.getId())
                 .orderDetailRequests(Arrays.asList(
                         ItemOrderDetailDTO.Request.builder().itemId(1L).optionId(1L).build(),
-                        ItemOrderDetailDTO.Request.builder().itemId(2L).optionId(null).build(),
-                        ItemOrderDetailDTO.Request.builder().itemId(3L).optionId(null).build()
+                        ItemOrderDetailDTO.Request.builder().itemId(2L).optionId(2L).build(),
+                        ItemOrderDetailDTO.Request.builder().itemId(3L).optionId(3L).build()
                 ))
                 .build();
 
@@ -275,7 +314,11 @@ class ItemOrderServiceTest {
                 .thenReturn(Optional.of(pinkKakao));
         when(itemOptionRepository.findById(1L))
                 .thenReturn(Optional.of(blackKakaoOption));
-        when(itemRepository.minusStockByIdWithLock(anyLong(), anyLong()))
+        when(itemOptionRepository.findById(2L))
+                .thenReturn(Optional.of(whiteKakao.getItemOptions().get(0)));
+        when(itemOptionRepository.findById(3L))
+                .thenReturn(Optional.of(pinkKakao.getItemOptions().get(0)));
+        when(itemOptionRepository.minusStockByIdWithLock(anyLong(), anyLong()))
                 .thenReturn(1);
 
 
@@ -286,17 +329,25 @@ class ItemOrderServiceTest {
         long itemTotalAmount = blackKakao.getAmount() + pinkKakao.getAmount() + whiteKakao.getAmount();
         long itemTotalDiscount = blackKakao.getDiscountAmount() + pinkKakao.getDiscountAmount() + whiteKakao.getDiscountAmount();
 
-        assertEquals(itemTotalPayAmount + blackKakaoOption.getPremium()
-                , order.getTotalPayAmount());
-        assertEquals(itemTotalAmount + blackKakaoOption.getPremium()
-                , order.getTotalAmount());
-        assertEquals(itemTotalDiscount
-                , order.getTotalDiscountAmount());
-        assertFalse(order.getOrderDetails().isEmpty());
-        assertEquals(request.getOrderDetailRequests().size(), order.getOrderDetails().size());
+        assertThat(order.getTotalPayAmount())
+                .isGreaterThan(0L)
+                .isEqualTo(itemTotalPayAmount + blackKakaoOption.getPremium());
+
+        assertThat(order.getTotalAmount())
+                .isGreaterThan(0L)
+                .isEqualTo(itemTotalAmount + blackKakaoOption.getPremium());
+
+        assertThat(order.getTotalDiscountAmount())
+                .isGreaterThan(0L)
+                .isEqualTo(itemTotalDiscount);
+
+        assertThat(order.getOrderDetails().size())
+                .isGreaterThan(0)
+                .isEqualTo(request.getOrderDetailRequests().size());
 
         order.getOrderDetails().stream().forEach(detail -> {
             Item item = itemRepository.findById(detail.getItemId()).get();
+            System.out.println(item.getName());
             long discountAmount = item.getDiscountAmount();
             long payAmount = item.getPayAmount();
             long amount = item.getAmount();
@@ -307,92 +358,20 @@ class ItemOrderServiceTest {
                 amount += itemOption.getPremium();
             }
 
-            assertEquals(discountAmount, detail.getDiscountAmount());
-            assertEquals(payAmount, detail.getPayAmount());
-            assertEquals(amount, detail.getAmount());
+            assertThat(detail.getDiscountAmount())
+                    .isGreaterThan(0L)
+                    .isEqualTo(discountAmount);
+
+            assertThat(detail.getPayAmount())
+                    .isGreaterThan(0L)
+                    .isEqualTo(payAmount);
+
+            assertThat(detail.getAmount())
+                    .isGreaterThan(0L)
+                    .isEqualTo(amount);
         });
     }
 
-    @Test
-    @DisplayName("cancel - 존재하지 않는 상세정")
-    @Transactional
-    public void cancelNotExistsDetails() {
-        // given
-        MemberDTO.Request memberRequest = createMemberRequest();
-
-        ItemOrderDetailDTO.RequestCancel requestCancel = ItemOrderDetailDTO.RequestCancel.builder()
-                .detailId(1L)
-                .orderId(1L)
-                .build();
-        Member member = Member.of(memberRequest, passwordEncoder);
-        // when
-        when(itemOrderRepository.findById(1L))
-                .thenReturn(Optional.of(ItemOrder.of(member)));
-
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> itemOrderService.cancelDetail(requestCancel));
-        assertTrue(illegalArgumentException.getMessage().contains("존재하지 않는 상세정보 입니다"));
-    }
-
-    @Test
-    @DisplayName("cancel - 존재하지 않는 주문")
-    @Transactional
-    public void cancelNotExistsOrder() {
-        ItemOrderDetailDTO.RequestCancel requestCancel = ItemOrderDetailDTO.RequestCancel.builder()
-                .detailId(1L)
-                .orderId(1L)
-                .build();
-
-        IllegalArgumentException illegalArgumentException = assertThrows(IllegalArgumentException.class, () -> itemOrderService.cancelDetail(requestCancel));
-        assertTrue(illegalArgumentException.getMessage().contains("존재하지 않는 주문입니다"));
-    }
-
-    @Test
-    @DisplayName("cancel")
-    @Transactional
-    public void cancel() {
-        // given
-        ItemOrder itemOrder = ItemOrder.of(Member.of(createMemberRequest(), passwordEncoder));
-        Item blackKakao = createItem(1L, "blackKakao", 1000L, 100L);
-        Item whiteKakao = createItem(2L, "whiteKakao", 5000L, 333L);
-        Item pinkKakao = createItem(3L, "pinkKakao", 4000L, 250L);
-
-        ItemOption blackKakaoOption = createItemOption(blackKakao, 1L,"두배로!", 500L);
-
-        // when
-        itemOrder.addOrderDetails(blackKakao, null);
-        itemOrder.addOrderDetails(whiteKakao, null);
-        itemOrder.addOrderDetails(pinkKakao, null);
-        itemOrder.addOrderDetails(blackKakao, blackKakaoOption);
-
-        ReflectionTestUtils.setField(itemOrder.getItemOrderDetails().get(0), "id", 1L);
-        ReflectionTestUtils.setField(itemOrder.getItemOrderDetails().get(1), "id", 2L);
-        ReflectionTestUtils.setField(itemOrder.getItemOrderDetails().get(2), "id", 3L);
-        ReflectionTestUtils.setField(itemOrder.getItemOrderDetails().get(3), "id", 4L);
-
-        when(itemOptionRepository.findById(1L))
-                .thenReturn(Optional.of(blackKakaoOption));
-
-        ItemOrderDetailDTO.Response response = itemOrder.cancelOrderDetail(2L);
-        itemOrder.cancelOrderDetail(4L);
-        // then
-        long itemTotalPayAmount = blackKakao.getPayAmount() + pinkKakao.getPayAmount() + whiteKakao.getPayAmount() + blackKakao.getPayAmount() + blackKakaoOption.getPremium();
-        long itemTotalAmount = blackKakao.getAmount() + pinkKakao.getAmount() + whiteKakao.getAmount() + blackKakao.getAmount() + blackKakaoOption.getPremium();
-        long itemTotalDiscount = blackKakao.getDiscountAmount() + pinkKakao.getDiscountAmount() + whiteKakao.getDiscountAmount();
-
-        assertEquals(blackKakao, itemOrder.getItemOrderDetails().get(0).getItem());
-        assertEquals(pinkKakao, itemOrder.getItemOrderDetails().get(1).getItem());
-
-        assertEquals(whiteKakao.getPayAmount(), response.getPayAmount());
-        assertEquals(whiteKakao.getAmount(), response.getAmount());
-        assertEquals(whiteKakao.getDiscountAmount(), response.getDiscountAmount());
-
-        assertEquals(itemTotalPayAmount - whiteKakao.getPayAmount() - blackKakao.getPayAmount() - blackKakaoOption.getPremium()
-                , itemOrder.getTotalPayAmount());
-        assertEquals(itemTotalAmount - whiteKakao.getAmount() - blackKakao.getAmount() - blackKakaoOption.getPremium()
-                , itemOrder.getTotalAmount());
-        assertEquals(itemTotalDiscount - whiteKakao.getDiscountAmount()
-                , itemOrder.getTotalDiscountAmount());
-    }
     private MemberDTO.Request createMemberRequest() {
         return MemberDTO.Request.builder()
                 .name("soora")
@@ -402,11 +381,11 @@ class ItemOrderServiceTest {
                 .build();
     }
 
-    private Item createItem(Long id, String name, Long amount, Long discountAmount) {
+    private Item createItem(Long id, Long noneOptionId, String name, Long amount, Long discountAmount) {
 
-        return createItem(id, name, amount, discountAmount, 1L);
+        return createItem(id, noneOptionId, name, amount, discountAmount, 1L);
     }
-    private Item createItem(Long id, String name, Long amount, Long discountAmount, long stock) {
+    private Item createItem(Long id, Long noneOptionId, String name, Long amount, Long discountAmount, long stock) {
         ItemDTO.Request build = ItemDTO.Request.builder()
                 .name(name)
                 .amount(amount)
@@ -415,7 +394,10 @@ class ItemOrderServiceTest {
                 .build();
 
         Item item = Item.of(build, null);
+        ItemOption itemOption = item.getItemOptions().get(0);
+
         ReflectionTestUtils.setField(item, "id", id);
+        ReflectionTestUtils.setField(itemOption, "id", noneOptionId);
 
         return item;
     }

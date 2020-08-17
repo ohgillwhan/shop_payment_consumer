@@ -36,6 +36,7 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
@@ -75,18 +76,31 @@ class ItemOrderRepositoryTest {
         itemOrder = itemOrderRepository.findById(itemOrder.getId()).get();
 
         // then
-        assertEquals(itemOrder.getMember().getId(), member.getId());
-        assertFalse(itemOrder.getItemOrderDetails().isEmpty());
-        assertEquals(itemOrderDetails.size(), itemOrder.getItemOrderDetails().size());
+        assertThat(member.getId())
+                .isNotEmpty()
+                .isEqualTo(itemOrder.getMember().getId());
+
+        assertThat(itemOrder.getMember().getId())
+                .isNotEmpty()
+                .isEqualTo(member.getId());
+
+        assertThat(itemOrder.getItemOrderDetails().size())
+                .isGreaterThan(0)
+                .isEqualTo(itemOrderDetails.size());
 
         // 함수를 통해 save를 한것이 아니라서 0원
-        assertEquals(0L, itemOrder.getTotalAmount());
-        assertEquals(0L, itemOrder.getTotalDiscountAmount());
-        assertEquals(0L, itemOrder.getTotalPayAmount());
+        assertThat(itemOrder.getTotalAmount())
+                .isEqualTo(0L);
+
+        assertThat(itemOrder.getTotalDiscountAmount())
+                .isEqualTo(0L);
+
+        assertThat(itemOrder.getTotalPayAmount())
+                .isEqualTo(0L);
     }
 
 
-    @DisplayName("주문삭제")
+    @DisplayName("주문 후 flush 후 삭제 그리고 검증")
     @Test
     @Transactional
     public void remove() throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException {
@@ -105,13 +119,17 @@ class ItemOrderRepositoryTest {
         );
         ReflectionTestUtils.setField(itemOrder, "itemOrderDetails", itemOrderDetails);
         flush();
+
         itemOrder = itemOrderRepository.findById(itemOrder.getId()).get();
         List<ItemOrderDetail> itemOrderDetails1 = itemOrder.getItemOrderDetails();
         itemOrderDetails1.remove(0);
         flush();
+
         itemOrder = itemOrderRepository.findById(itemOrder.getId()).get();
         // then
-        assertEquals(itemOrderDetails.size() - 1, itemOrder.getItemOrderDetails().size());
+        assertThat(itemOrder.getItemOrderDetails().size())
+                .isGreaterThan(0)
+                .isEqualTo(itemOrderDetails.size() - 1);
     }
 
     private Category addTopCategory() {
@@ -124,6 +142,7 @@ class ItemOrderRepositoryTest {
                 .amount(10000L)
                 .discountAmount(1000L)
                 .deliveryDescription("무료배송")
+                .stock(1L)
                 .build();
         return itemRepository.save(Item.of(build, category));
     }

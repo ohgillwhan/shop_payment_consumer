@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
@@ -22,7 +23,7 @@ class CategoryRepositoryTest {
 
     @Test
     @Transactional
-    @DisplayName("최상위 카테고리 추가")
+    @DisplayName("최상위 카테고리 추가 후 flush 그리고 다시 확인")
     void saveTopCategory() {
         // given
         CategoryDTO.Request request = CategoryDTO.Request.builder().name("TOP").build();
@@ -36,13 +37,16 @@ class CategoryRepositoryTest {
         Category byId = categoryRepository.findById(id).get();
 
         // then
-        assertTrue(byId.getId() > 0L);
-        assertEquals(byId.getId(), byId.getParent().getId());
-        assertEquals(top.getName(), byId.getName());
+        assertThat(byId.getId())
+                .isGreaterThan(0L)
+                .isEqualTo(byId.getParent().getId());
+
+        assertThat(byId.getName())
+                .isEqualTo(top.getName());
     }
     @Test
     @Transactional
-    @DisplayName("부모 카테고리 포함하여 추가")
+    @DisplayName("부모 카테고리 포함하여 추가 후 flush 그리고 다시 확인")
     void addWithParent() {
         // given
         CategoryDTO.Request parentRequest = CategoryDTO.Request.builder().name("parent").build();
@@ -60,8 +64,12 @@ class CategoryRepositoryTest {
         Category byId = categoryRepository.findById(childId).get();
 
         // then
-        assertTrue(byId.getId() > 0L);
-        assertEquals(parent.getId(), byId.getParent().getId());
+        assertThat(byId.getId())
+                .isGreaterThan(0L);
+
+        assertThat(byId.getParent().getId())
+                .isGreaterThan(0L)
+                .isEqualTo(parent.getId());
     }
 
     private void flush() {

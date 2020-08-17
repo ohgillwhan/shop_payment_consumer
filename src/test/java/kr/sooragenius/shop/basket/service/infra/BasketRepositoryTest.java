@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
@@ -34,7 +35,7 @@ class BasketRepositoryTest {
 
     @Test
     @Transactional
-    @DisplayName("장바구니 추가")
+    @DisplayName("장바구니 추가 후 flush 그리고 재확인")
     public void addBasket() {
         // given
         Member member = addMember();
@@ -45,9 +46,11 @@ class BasketRepositoryTest {
 
         Basket byId = basketRepository.findById(basketId).get();
         // then
-
-        assertTrue(byId.getId() > 0);
-        assertEquals(member.getId(), byId.getMember().getId());
+        assertThat(byId.getId())
+                .isGreaterThan(0);
+        assertThat(byId.getMember().getId())
+                .isNotEmpty()
+                .isEqualTo(member.getId());
     }
 
 

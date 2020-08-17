@@ -1,6 +1,8 @@
 package kr.sooragenius.shop.item.event.impl;
 
 import kr.sooragenius.shop.item.dto.ItemDTO;
+import kr.sooragenius.shop.item.dto.ItemOptionDTO;
+import kr.sooragenius.shop.item.service.ItemOptionService;
 import kr.sooragenius.shop.item.service.ItemService;
 import kr.sooragenius.shop.order.dto.ItemOrderEventDTO;
 import kr.sooragenius.shop.order.service.ItemOrderService;
@@ -11,10 +13,10 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class ItemOrderEventListener {
-    private final ItemService itemService;
+    private final ItemOptionService itemOptionService;
     @EventListener
     public void itemOrderEvent(ItemOrderEventDTO.NewItemOrder newItemOrder) {
-        ItemDTO.StockUpdate stockUpdate = new ItemDTO.StockUpdate(newItemOrder.getItemId(), - newItemOrder.getStockCount());
-        itemService.minusStockById(stockUpdate);
+        ItemOptionDTO.StockUpdate stockUpdate = new ItemOptionDTO.StockUpdate(newItemOrder.getOptionId(), - newItemOrder.getStockCount());
+        itemOptionService.minusStockById(stockUpdate);
     }
 }

@@ -26,11 +26,12 @@ public class ItemOption {
         itemOption.name = request.getName();
         itemOption.premium = request.getPremium();
         itemOption.item = item;
+        itemOption.stock = request.getStock();
 
         return itemOption;
     }
-    public static ItemOption createNoneOption(Item item) {
-        ItemOptionDTO.Request request = new ItemOptionDTO.Request("None", 0L);
+    public static ItemOption createNoneOption(Item item, long stock) {
+        ItemOptionDTO.Request request = new ItemOptionDTO.Request("None", 0L, stock);
         return of(request, item);
     }
 

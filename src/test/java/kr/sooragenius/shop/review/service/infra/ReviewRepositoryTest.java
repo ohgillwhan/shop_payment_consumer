@@ -22,6 +22,7 @@ import javax.persistence.EntityManager;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
@@ -34,7 +35,7 @@ class ReviewRepositoryTest {
 
     @Test
     @Transactional
-    @DisplayName("상품의 리뷰 추가")
+    @DisplayName("상품의 리뷰 추가 그리고 flush 후 재검증")
     void addReview() {
         //given
         Category category = addTopCategory();
@@ -67,17 +68,29 @@ class ReviewRepositoryTest {
 
             Review byId = reviewRepository.findById(key).get();
 
-            assertEquals(key, byId.getId());
-            assertEquals(value.getContents(), byId.getContents());
-            assertEquals(item.getId(), byId.getItem().getId());
-            assertEquals(value.getScore(), byId.getScore());
+            assertThat(byId.getId())
+                    .isGreaterThan(0L)
+                    .isEqualTo(key);
+
+            assertThat(byId.getContents())
+                    .isNotEmpty()
+                    .isEqualTo(value.getContents());
+
+            assertThat(byId.getItem().getId())
+                    .isNotNull()
+                    .isEqualTo(item.getId());
+
+            assertThat(byId.getScore())
+                    .isNotNull()
+                    .isEqualTo(value.getScore());
+
         });
     }
     private Category addTopCategory() {
         return categoryRepository.save(Category.of(CategoryDTO.Request.builder().name("TOP").build()));
     }
     private Item addKakaoItem(Category category) {
-        return itemRepository.save(Item.of(ItemDTO.Request.builder().name("Kakao").amount(1000L).discountAmount(100L).build(), category));
+        return itemRepository.save(Item.of(ItemDTO.Request.builder().name("Kakao").amount(1000L).discountAmount(100L).stock(1L).build(), category));
     }
     private void flush() {
         entityManager.flush();
