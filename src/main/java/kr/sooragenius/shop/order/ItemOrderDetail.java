@@ -31,6 +31,7 @@ public class ItemOrderDetail {
     private long payAmount;
     private long stock;
 
+    @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus;
 
     protected ItemOrderDetail() {}

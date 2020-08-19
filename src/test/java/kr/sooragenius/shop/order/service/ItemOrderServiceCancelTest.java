@@ -14,6 +14,7 @@ import kr.sooragenius.shop.member.service.infra.MemberRepository;
 import kr.sooragenius.shop.order.ItemOrder;
 import kr.sooragenius.shop.order.dto.ItemOrderDTO;
 import kr.sooragenius.shop.order.dto.ItemOrderDetailDTO;
+import kr.sooragenius.shop.order.dto.ItemOrderEventDTO;
 import kr.sooragenius.shop.order.enums.OrderStatus;
 import kr.sooragenius.shop.order.service.infra.ItemOrderRepository;
 import lombok.RequiredArgsConstructor;
@@ -142,22 +143,14 @@ class ItemOrderServiceCancelTest {
         when(itemOptionRepository.findById(4L))
                 .thenReturn(Optional.of(pinkNoneOption));
 
-        ItemOrderDetailDTO.Response response = itemOrder.cancelOrderDetail(2L);
-        itemOrder.cancelOrderDetail(4L);
+        ItemOrderDetailDTO.Response cancelResponseId2 = itemOrder.cancelOrderDetail(2L);
+        ItemOrderDetailDTO.Response cancelResponseId4 = itemOrder.cancelOrderDetail(4L);
         // then
         long itemTotalPayAmount = blackKakao.getPayAmount() + pinkKakao.getPayAmount() + whiteKakao.getPayAmount() + blackKakao.getPayAmount() + blackKakaoOption.getPremium();
         long itemTotalAmount = blackKakao.getAmount() + pinkKakao.getAmount() + whiteKakao.getAmount() + blackKakao.getAmount() + blackKakaoOption.getPremium();
         long itemTotalDiscount = blackKakao.getDiscountAmount() + pinkKakao.getDiscountAmount() + whiteKakao.getDiscountAmount();
 
         System.out.println(itemOrder.getItemOrderDetails().get(1).getItem().getName());
-
-        assertThat(itemOrder.getItemOrderDetails().get(0).getItem())
-                .isNotNull()
-                .isEqualTo(blackKakao);
-
-        assertThat(itemOrder.getItemOrderDetails().get(1).getItem())
-                .isNotNull()
-                .isEqualTo(pinkKakao);
 
         assertThat(blackNoneOption.getStock())
                 .isNotNull()
@@ -169,15 +162,15 @@ class ItemOrderServiceCancelTest {
                 .isNotNull()
                 .isEqualTo(1L);
 
-        assertThat(response.getPayAmount())
+        assertThat(cancelResponseId2.getPayAmount())
                 .isGreaterThan(0L)
                 .isEqualTo(whiteKakao.getPayAmount());
 
-        assertThat(response.getAmount())
+        assertThat(cancelResponseId2.getAmount())
                 .isGreaterThan(0L)
                 .isEqualTo(whiteKakao.getAmount());
 
-        assertThat(response.getDiscountAmount())
+        assertThat(cancelResponseId2.getDiscountAmount())
                 .isGreaterThan(0L)
                 .isEqualTo(whiteKakao.getDiscountAmount());
 
