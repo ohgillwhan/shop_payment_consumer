@@ -14,6 +14,7 @@ import kr.sooragenius.shop.member.service.infra.MemberRepository;
 import kr.sooragenius.shop.order.ItemOrder;
 import kr.sooragenius.shop.order.dto.ItemOrderDTO;
 import kr.sooragenius.shop.order.dto.ItemOrderDetailDTO;
+import kr.sooragenius.shop.order.enums.OrderStatus;
 import kr.sooragenius.shop.order.service.infra.ItemOrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.annotation.Before;
@@ -110,12 +111,21 @@ class ItemOrderServiceCancelTest {
         Item pinkKakao = createItem(3L, "pinkKakao", 4000L, 250L);
 
         ItemOption blackKakaoOption = createItemOption(blackKakao, 1L,"두배로!", 500L);
+        ItemOption blackNoneOption = blackKakao.getItemOptions().get(0);
+        ItemOption whiteNoneOption = whiteKakao.getItemOptions().get(0);
+        ItemOption pinkNoneOption = pinkKakao.getItemOptions().get(0);
+
+
+        ItemOrderDetailDTO.Request blackKakaoDetailRequest = ItemOrderDetailDTO.Request.builder().itemId(1L).optionId(1L).stock(10L).build();
+        ItemOrderDetailDTO.Request blackNoneDetailRequest = ItemOrderDetailDTO.Request.builder().itemId(1L).optionId(2L).stock(20L).build();
+        ItemOrderDetailDTO.Request whiteNoneDetailRequest = ItemOrderDetailDTO.Request.builder().itemId(2L).optionId(3L).stock(30L).build();
+        ItemOrderDetailDTO.Request pinkNoneDetailRequest = ItemOrderDetailDTO.Request.builder().itemId(3L).optionId(4L).stock(40L).build();
 
         // when
-        itemOrder.addOrderDetails(blackKakao, null);
-        itemOrder.addOrderDetails(whiteKakao, null);
-        itemOrder.addOrderDetails(pinkKakao, null);
-        itemOrder.addOrderDetails(blackKakao, blackKakaoOption);
+        itemOrder.addOrderDetails(blackKakao, blackNoneOption, OrderStatus.COMPLETE, blackKakaoDetailRequest);
+        itemOrder.addOrderDetails(whiteKakao, whiteNoneOption, OrderStatus.COMPLETE, blackNoneDetailRequest);
+        itemOrder.addOrderDetails(pinkKakao, pinkNoneOption, OrderStatus.COMPLETE, whiteNoneDetailRequest);
+        itemOrder.addOrderDetails(blackKakao, blackKakaoOption, OrderStatus.COMPLETE, pinkNoneDetailRequest);
 
         for(int i = 0; i<4; i++) {
             long id = i + 1;
@@ -125,6 +135,12 @@ class ItemOrderServiceCancelTest {
 
         when(itemOptionRepository.findById(1L))
                 .thenReturn(Optional.of(blackKakaoOption));
+        when(itemOptionRepository.findById(2L))
+                .thenReturn(Optional.of(blackNoneOption));
+        when(itemOptionRepository.findById(3L))
+                .thenReturn(Optional.of(whiteNoneOption));
+        when(itemOptionRepository.findById(4L))
+                .thenReturn(Optional.of(pinkNoneOption));
 
         ItemOrderDetailDTO.Response response = itemOrder.cancelOrderDetail(2L);
         itemOrder.cancelOrderDetail(4L);
@@ -133,6 +149,8 @@ class ItemOrderServiceCancelTest {
         long itemTotalAmount = blackKakao.getAmount() + pinkKakao.getAmount() + whiteKakao.getAmount() + blackKakao.getAmount() + blackKakaoOption.getPremium();
         long itemTotalDiscount = blackKakao.getDiscountAmount() + pinkKakao.getDiscountAmount() + whiteKakao.getDiscountAmount();
 
+        System.out.println(itemOrder.getItemOrderDetails().get(1).getItem().getName());
+
         assertThat(itemOrder.getItemOrderDetails().get(0).getItem())
                 .isNotNull()
                 .isEqualTo(blackKakao);
@@ -140,6 +158,16 @@ class ItemOrderServiceCancelTest {
         assertThat(itemOrder.getItemOrderDetails().get(1).getItem())
                 .isNotNull()
                 .isEqualTo(pinkKakao);
+
+        assertThat(blackNoneOption.getStock())
+                .isNotNull()
+                .isEqualTo(1L);
+        assertThat(whiteNoneOption.getStock())
+                .isNotNull()
+                .isEqualTo(1L);
+        assertThat(pinkNoneOption.getStock())
+                .isNotNull()
+                .isEqualTo(1L);
 
         assertThat(response.getPayAmount())
                 .isGreaterThan(0L)

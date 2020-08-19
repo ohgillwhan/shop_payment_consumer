@@ -2,6 +2,7 @@ package kr.sooragenius.shop.order;
 
 import kr.sooragenius.shop.item.Item;
 import kr.sooragenius.shop.item.ItemOption;
+import kr.sooragenius.shop.order.enums.OrderStatus;
 import lombok.Getter;
 
 import javax.persistence.*;
@@ -28,9 +29,12 @@ public class ItemOrderDetail {
     private long amount;
     private long discountAmount;
     private long payAmount;
+    private long stock;
+
+    private OrderStatus orderStatus;
 
     protected ItemOrderDetail() {}
-    protected static ItemOrderDetail of(Item item, ItemOption itemOption, ItemOrder itemOrder) {
+    protected static ItemOrderDetail of(Item item, ItemOption itemOption, ItemOrder itemOrder, OrderStatus orderStatus, Long stock) {
         ItemOrderDetail itemOrderDetail = new ItemOrderDetail();
         itemOrderDetail.item = item;
         itemOrderDetail.itemOrder = itemOrder;
@@ -38,6 +42,8 @@ public class ItemOrderDetail {
         itemOrderDetail.amount = item.getAmount();
         itemOrderDetail.discountAmount = item.getDiscountAmount();
         itemOrderDetail.payAmount = item.getPayAmount();
+        itemOrderDetail.orderStatus = orderStatus;
+        itemOrderDetail.stock = stock;
 
         if(itemOption != null) {
             itemOrderDetail.amount += itemOption.getPremium();
@@ -45,5 +51,13 @@ public class ItemOrderDetail {
         }
 
         return itemOrderDetail;
+    }
+
+    public void cancel() {
+        if(this.orderStatus == OrderStatus.CANCEL) {
+            throw new RuntimeException("취소할 수 없는 상태입니다.");
+        }
+        this.orderStatus = OrderStatus.CANCEL;
+
     }
 }

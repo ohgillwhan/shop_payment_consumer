@@ -40,7 +40,7 @@ public class ItemOrderService {
 
         ItemOrder itemOrder = ItemOrder.of(member);
 
-        orderDetailRequests.stream().map(detailRequest -> {
+        for(ItemOrderDetailDTO.Request detailRequest : request.getOrderDetailRequests()) {
             Item item = itemRepository.findById(detailRequest.getItemId()).orElseThrow(() -> new IllegalArgumentException("존재하지 않는 상품입니다"));
 
             ItemOption itemOption = null;
@@ -51,8 +51,8 @@ public class ItemOrderService {
 
             applicationEventPublisher.publishEvent(ItemOrderEventDTO.NewItemOrder.of(detailRequest));
 
-            return itemOrder.addOrderDetails(item, itemOption);
-        }).collect(Collectors.toList());
+            itemOrder.addOrderDetails(item, itemOption, detailRequest.getOrderStatus(), detailRequest);
+        };
 
         itemOrderRepository.save(itemOrder);
 
@@ -63,6 +63,10 @@ public class ItemOrderService {
     public ItemOrderDetailDTO.Response cancelDetail(ItemOrderDetailDTO.RequestCancel request) {
         ItemOrder itemOrder = itemOrderRepository.findById(request.getOrderId()).orElseThrow(() -> new IllegalArgumentException("존재하지 않는 주문입니다"));
 
-        return itemOrder.cancelOrderDetail(request.getDetailId());
+        ItemOrderDetailDTO.Response cancelResponse = itemOrder.cancelOrderDetail(request.getDetailId());
+
+        applicationEventPublisher.publishEvent(ItemOrderEventDTO.ItemCancel.of(cancelResponse));
+
+        return cancelResponse;
     }
 }

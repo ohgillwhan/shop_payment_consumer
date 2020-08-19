@@ -4,6 +4,7 @@ import kr.sooragenius.shop.item.Item;
 import kr.sooragenius.shop.item.ItemOption;
 import kr.sooragenius.shop.member.Member;
 import kr.sooragenius.shop.order.dto.ItemOrderDetailDTO;
+import kr.sooragenius.shop.order.enums.OrderStatus;
 import lombok.Getter;
 import org.springframework.data.domain.AbstractAggregateRoot;
 
@@ -22,7 +23,7 @@ public class ItemOrder {
     @JoinColumn(name = "MEMBER_ID", referencedColumnName = "MEMBER_ID")
     private Member member;
 
-    @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.REMOVE}, mappedBy = "itemOrder", orphanRemoval = true)
+    @OneToMany(cascade = {CascadeType.PERSIST}, mappedBy = "itemOrder")
     private List<ItemOrderDetail> itemOrderDetails = new ArrayList<>();
 
     private long totalAmount;
@@ -35,8 +36,8 @@ public class ItemOrder {
 
         return itemOrder;
     }
-    public ItemOrderDetailDTO.ResponseFromOrder addOrderDetails(Item item, ItemOption option) {
-        ItemOrderDetail detail = ItemOrderDetail.of(item, option, this);
+    public ItemOrderDetailDTO.ResponseFromOrder addOrderDetails(Item item, ItemOption option, OrderStatus orderStatus, ItemOrderDetailDTO.Request request) {
+        ItemOrderDetail detail = ItemOrderDetail.of(item, option, this, orderStatus, request.getStock());
         getItemOrderDetails().add(detail);
 
         totalAmount += detail.getAmount();
@@ -47,17 +48,17 @@ public class ItemOrder {
     }
     public ItemOrderDetailDTO.Response cancelOrderDetail(long detailId) {
         ItemOrderDetail itemOrderDetail = findById(detailId);
-
-        getItemOrderDetails().remove(itemOrderDetail);
+        if(itemOrderDetail == null) {
+            throw new IllegalArgumentException("존재하지 않는 상세정보 입니다.");
+        }
 
         totalAmount -= itemOrderDetail.getAmount();
         totalDiscountAmount -= itemOrderDetail.getDiscountAmount();
         totalPayAmount -= itemOrderDetail.getPayAmount();
 
+        itemOrderDetail.cancel();
+
         return ItemOrderDetailDTO.Response.of(itemOrderDetail);
-    }
-    public void changeTotalAmount(int temp) {
-        this.totalAmount = temp;
     }
 
     private ItemOrderDetail findById(long id) {

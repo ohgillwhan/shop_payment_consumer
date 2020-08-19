@@ -16,7 +16,13 @@ public class ItemOrderEventListener {
     private final ItemOptionService itemOptionService;
     @EventListener
     public void itemOrderEvent(ItemOrderEventDTO.NewItemOrder newItemOrder) {
-        ItemOptionDTO.StockUpdate stockUpdate = new ItemOptionDTO.StockUpdate(newItemOrder.getOptionId(), - newItemOrder.getStockCount());
+        ItemOptionDTO.StockUpdate stockUpdate = new ItemOptionDTO.StockUpdate(newItemOrder.getOptionId(), newItemOrder.getStock());
         itemOptionService.minusStockById(stockUpdate);
+    }
+
+    @EventListener
+    public void cancelEvent(ItemOrderEventDTO.ItemCancel itemCancel) {
+        ItemOptionDTO.StockUpdate stockUpdate = new ItemOptionDTO.StockUpdate(itemCancel.getOptionId(), itemCancel.getStock());
+        itemOptionService.plusStockById(stockUpdate);
     }
 }

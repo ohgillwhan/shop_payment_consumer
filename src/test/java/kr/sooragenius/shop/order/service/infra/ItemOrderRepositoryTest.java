@@ -15,7 +15,9 @@ import kr.sooragenius.shop.member.enums.MemberAuthority;
 import kr.sooragenius.shop.member.service.infra.MemberRepository;
 import kr.sooragenius.shop.order.ItemOrder;
 import kr.sooragenius.shop.order.ItemOrderDetail;
+import kr.sooragenius.shop.order.dto.ItemOrderDetailDTO;
 import kr.sooragenius.shop.order.dto.ItemOrderEventDTO;
+import kr.sooragenius.shop.order.enums.OrderStatus;
 import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -99,39 +101,6 @@ class ItemOrderRepositoryTest {
                 .isEqualTo(0L);
     }
 
-
-    @DisplayName("주문 후 flush 후 삭제 그리고 검증")
-    @Test
-    @Transactional
-    public void remove() throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException {
-
-        // given
-        Category category = addTopCategory();
-        Item item = addItem(category);
-        Member member = addMember();
-
-        // when
-        ItemOrder itemOrder = itemOrderRepository.save(ItemOrder.of(member));
-        List<ItemOrderDetail> itemOrderDetails = Arrays.asList(
-                createItemOrderDetail(item, null, itemOrder),
-                createItemOrderDetail(item, null, itemOrder),
-                createItemOrderDetail(item, null, itemOrder)
-        );
-        ReflectionTestUtils.setField(itemOrder, "itemOrderDetails", itemOrderDetails);
-        flush();
-
-        itemOrder = itemOrderRepository.findById(itemOrder.getId()).get();
-        List<ItemOrderDetail> itemOrderDetails1 = itemOrder.getItemOrderDetails();
-        itemOrderDetails1.remove(0);
-        flush();
-
-        itemOrder = itemOrderRepository.findById(itemOrder.getId()).get();
-        // then
-        assertThat(itemOrder.getItemOrderDetails().size())
-                .isGreaterThan(0)
-                .isEqualTo(itemOrderDetails.size() - 1);
-    }
-
     private Category addTopCategory() {
         return categoryRepository.save(Category.of(CategoryDTO.Request.builder().name("TOP").build()));
     }
@@ -153,10 +122,10 @@ class ItemOrderRepositoryTest {
         return save;
     }
     private ItemOrderDetail createItemOrderDetail(Item item, ItemOption itemOption, ItemOrder itemOrder) throws IllegalAccessException, InvocationTargetException, InstantiationException, NoSuchMethodException {
-        Method of = ItemOrderDetail.class.getDeclaredMethod("of", Item.class, ItemOption.class, ItemOrder.class);
+        Method of = ItemOrderDetail.class.getDeclaredMethod("of", Item.class, ItemOption.class, ItemOrder.class, OrderStatus.class, Long.class);
         of.setAccessible(true);
 
-        ItemOrderDetail itemOrderDetail = (ItemOrderDetail) of.invoke(null, item, itemOption, itemOrder);
+        ItemOrderDetail itemOrderDetail = (ItemOrderDetail) of.invoke(null, item, itemOption, itemOrder, OrderStatus.COMPLETE, 1L);
 
         return itemOrderDetail;
     }

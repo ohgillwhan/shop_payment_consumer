@@ -1,6 +1,7 @@
 package kr.sooragenius.shop.order.dto;
 
 import kr.sooragenius.shop.order.ItemOrderDetail;
+import kr.sooragenius.shop.order.enums.OrderStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,6 +13,8 @@ public class ItemOrderDetailDTO {
     public static class Request {
         private Long optionId;
         private long itemId;
+        private long stock;
+        private OrderStatus orderStatus;
     }
     @Data
     public static class ResponseFromOrder {
@@ -44,6 +47,7 @@ public class ItemOrderDetailDTO {
         private long amount;
         private long discountAmount;
         private long payAmount;
+        private long stock;
 
         public static Response of(ItemOrderDetail itemOrderDetail) {
             Response response = new Response();
@@ -53,6 +57,7 @@ public class ItemOrderDetailDTO {
             response.amount = itemOrderDetail.getAmount();
             response.discountAmount = itemOrderDetail.getDiscountAmount();
             response.payAmount = itemOrderDetail.getPayAmount();
+            response.stock = itemOrderDetail.getStock();
 
             if(itemOrderDetail.getItemOption() != null) {
                 response.optionId = itemOrderDetail.getItemOption().getId();
