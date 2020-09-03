@@ -35,7 +35,7 @@ public class RedisConnectionTest {
                 .isNotEmpty()
                 .isEqualTo(value);
 
-//        assertThat(stringRedisTemplate.delete(key))
-//                .isTrue();
+        assertThat(stringRedisTemplate.delete(key))
+                .isTrue();
     }
 }

@@ -7,11 +7,4 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface ItemOptionRepository extends JpaRepository<ItemOption, Long> {
-    @Modifying
-    @Query("update ItemOption as itemOption set itemOption.stock = itemOption.stock - :stock where itemOption.id = :id and itemOption.stock >= :stock")
-    int minusStockByIdWithLock(@Param("id") Long id, @Param("stock") Long stock);
-
-    @Modifying
-    @Query("update ItemOption as itemOption set itemOption.stock = itemOption.stock + :stock where itemOption.id = :id")
-    void plusStockById(@Param("id") Long id, @Param("stock") Long stock);
 }

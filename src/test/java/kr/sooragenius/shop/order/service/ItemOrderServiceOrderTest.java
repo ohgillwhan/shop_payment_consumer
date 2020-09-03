@@ -23,10 +23,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -192,9 +194,14 @@ class ItemOrderServiceOrderTest {
         when(itemOptionRepository.findById(3L))
                 .thenReturn(Optional.of(pinkKakao.getItemOptions().get(0)));
 
-        when(itemOptionRepository.minusStockByIdWithLock(anyLong(), anyLong()))
-                .thenReturn(1);
 
+        when(itemOrderRepository.save(any()))
+                .thenAnswer(invocationOnMock -> {
+                    ItemOrder itemOrder = invocationOnMock.getArgument(0);
+                    ReflectionTestUtils.setField(itemOrder, "id", 1L);
+
+                    return itemOrder;
+                });
         ItemOrderDTO.Response order = itemOrderService.order(request);
 
         // then
@@ -269,8 +276,12 @@ class ItemOrderServiceOrderTest {
         when(itemOptionRepository.findById(3L))
                 .thenReturn(Optional.of(pinkKakao.getItemOptions().get(0)));
 
-        when(itemOptionRepository.minusStockByIdWithLock(anyLong(), anyLong()))
-                .thenReturn(1);
+        when(itemOrderRepository.save(any()))
+                .thenAnswer(invocationOnMock -> {
+                    ItemOrder itemOrder = invocationOnMock.getArgument(0);
+                    ReflectionTestUtils.setField(itemOrder, "id", 1L);
+                    return itemOrder;
+                });
 
 
         ItemOrderDTO.Response order = itemOrderService.order(request);

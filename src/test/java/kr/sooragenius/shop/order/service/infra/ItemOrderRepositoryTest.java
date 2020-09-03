@@ -50,7 +50,6 @@ class ItemOrderRepositoryTest {
     private final ItemRepository itemRepository;
     private final ItemOptionRepository itemOptionRepository;
     private final MemberRepository memberRepository;
-    private final PasswordEncoder passwordEncoder;
     private final EntityManager entityManager;
     private final ApplicationEventPublisher applicationEventPublisher;
 
@@ -115,7 +114,7 @@ class ItemOrderRepositoryTest {
     private Member addMember() {
         MemberDTO.Request request = MemberDTO.Request.builder().authority(MemberAuthority.ROLE_ADMIN).id("A1").name("A1").password("A1").build();
 
-        Member save = memberRepository.save(Member.of(request, passwordEncoder));
+        Member save = memberRepository.save(Member.of(request, passwordEncoder()));
         return save;
     }
     private ItemOrderDetail createItemOrderDetail(Item item, ItemOption itemOption, ItemOrder itemOrder) throws IllegalAccessException, InvocationTargetException, InstantiationException, NoSuchMethodException {
@@ -131,7 +130,6 @@ class ItemOrderRepositoryTest {
         entityManager.clear();
     }
 
-    @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }

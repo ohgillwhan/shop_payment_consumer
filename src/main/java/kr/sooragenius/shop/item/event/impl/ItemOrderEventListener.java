@@ -59,4 +59,13 @@ public class ItemOrderEventListener {
 //
         String execute = (String) redisTemplate.execute(holdScript, keys, values.toArray());
     }
+    @EventListener
+    public void cancelEvent(ItemOrderEventDTO.ItemCancel itemCancel) {
+        ItemOrderEventDTO.NewItemOrderRollback build = ItemOrderEventDTO.NewItemOrderRollback.builder()
+                .itemId(itemCancel.getItemId())
+                .optionId(itemCancel.getOptionId())
+                .stock(itemCancel.getStock())
+                .build();
+        cancelEvent(build);
+    }
 }

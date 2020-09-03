@@ -61,7 +61,6 @@ public class ItemOrderServiceEventTest {
     private final ItemOrderRepository itemOrderRepository;
     private final ItemOptionRepository itemOptionRepository;
     private final MemberRepository memberRepository;
-    private final ApplicationEventPublisher applicationEventPublisher;
     private final PasswordEncoder passwordEncoder;
     private final EntityManager entityManager;
     private final RedisTemplate redisTemplate;
@@ -143,6 +142,8 @@ public class ItemOrderServiceEventTest {
         Member member = addMember();
         flush();
 
+        String stockRedisKey = String.format(REDIS_STOCK_KEY, item.getId(), item.getNoneOptionId());
+
         ItemOrderDTO.Request request = ItemOrderDTO.Request.builder()
                 .memberId(member.getId())
                 .orderDetailRequests(
@@ -166,7 +167,8 @@ public class ItemOrderServiceEventTest {
                 .orderId(itemOrder.getId())
                 .detailId(itemOrder.getItemOrderDetails().get(0).getId())
                 .build();
-
+        
+        redisTemplate.opsForValue().set(stockRedisKey, "0");
         // when
 
         itemOrderService.cancelDetail(cancel);
@@ -174,8 +176,8 @@ public class ItemOrderServiceEventTest {
 
         ItemOption itemOption = itemOptionRepository.findById(item.getNoneOptionId()).get();
         // then
-        assertThat(itemOption.getStock())
-                .isEqualTo(1L);
+        assertThat(redisTemplate.opsForValue().get(stockRedisKey))
+                .isEqualTo("1");
 
     }
 

@@ -55,7 +55,7 @@ public class ItemOrderService {
             itemOrder.addOrderDetails(item, itemOption, detailRequest.getOrderStatus(), detailRequest);
         };
 
-        itemOrderRepository.save(itemOrder);
+        itemOrder = itemOrderRepository.save(itemOrder);
 
         return ItemOrderDTO.Response.of(itemOrder, itemOrder.getItemOrderDetails());
     }

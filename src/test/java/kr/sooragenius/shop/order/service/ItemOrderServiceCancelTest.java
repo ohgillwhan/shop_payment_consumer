@@ -161,16 +161,6 @@ class ItemOrderServiceCancelTest {
 
         System.out.println(itemOrder.getItemOrderDetails().get(1).getItem().getName());
 
-        assertThat(blackNoneOption.getStock())
-                .isNotNull()
-                .isEqualTo(1L);
-        assertThat(whiteNoneOption.getStock())
-                .isNotNull()
-                .isEqualTo(1L);
-        assertThat(pinkNoneOption.getStock())
-                .isNotNull()
-                .isEqualTo(1L);
-
         assertThat(cancelResponseId2.getPayAmount())
                 .isGreaterThan(0L)
                 .isEqualTo(whiteKakao.getPayAmount());
