@@ -147,7 +147,18 @@ EventPublish는 어떻게 테스트할건가..?
 ## 회고
 Kafka 설정을 잘못했더니 오류가 발생했다.  
 설정에 대해서 좀 더 조사해보자.
-
+https://team-platform.tistory.com/32
+https://www.popit.kr/kafka-%EC%9A%B4%EC%98%81%EC%9E%90%EA%B0%80-%EB%A7%90%ED%95%98%EB%8A%94-topic-replication/
+https://www.popit.kr/kafka-%EC%9A%B4%EC%98%81%EC%9E%90%EA%B0%80-%EB%A7%90%ED%95%98%EB%8A%94-replication-factor-%EB%B3%80%EA%B2%BD/
+https://stackoverflow.com/questions/50895344/spring-kafka-and-number-of-topic-consumers
+### 공부한것
+1. NewTopic을 Bean 으로 등록하면 Topic이 생성된다. 이미 생성이 되어있으면은 안됨
+2. ENABLE_AUTO_COMMIT_CONFIG을 true로 하고, AUTO_COMMIT_INTERVAL_MS_CONFIG의 값을 설정해주면은 AUTO_COMMIT_INTERVAL_MS_CONFIG 설정값 마다 offset이 commit이 된다.  
+3. 만약 commit이 안되면은 해당 토픽의 데이터를 중복으로 읽을 수 있다
+4. AUTO_COMMIT_INTERVAL_MS_CONFIG 를 false로 하면은 수동적으로 commit이 가능하다. 중요한것은 수동으로
+5. KafkaListenerContainerFactory의 구현체는 ConcurrentKafkaListenerContainerFactory 밖에 없다
+6. ConcurrentKafkaListenerContainerFactory의 concurrency는 동시에 데이터를 읽을 갯수이다.
+7.  
 # 15일차
 1. Kafka 코드 적용하기(test말고)
 2. 물건 주문시 메세지 발행하기

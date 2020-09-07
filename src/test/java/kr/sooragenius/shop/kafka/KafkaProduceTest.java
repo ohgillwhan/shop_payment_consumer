@@ -17,6 +17,7 @@ import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
+import org.springframework.kafka.listener.adapter.ConsumerRecordMetadata;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -28,16 +29,21 @@ public class KafkaProduceTest {
     private final KafkaTemplate kafkaTemplate;
 
 
-
     @Test
     public void prod() throws InterruptedException {
-        kafkaTemplate.send("Topic", "Hello", "A");
+        for(int i = 0; i<1000; i++) {
+            kafkaTemplate.send("NEW-Topic", i%5,"Hello"+i, "A"+i);
+        }
 
-        Thread.sleep(10000);
+        Thread.sleep(1000L);
     }
 
-    @KafkaListener(groupId = "Hello" , topics = "Topic", containerFactory = "kafkaListenerContainerFactory")
-    public void listner(String s) {
-        System.out.println("Consume : " + s);
+    @KafkaListener(groupId = "Hello" , topics = "NEW-Topic", containerFactory = "kafkaListenerContainerFactory")
+    public void listner(String s, ConsumerRecordMetadata meta) {
+        System.out.println("Consume : " + meta.partition() + " "+s);
+    }
+    @KafkaListener(groupId = "Hello2" , topics = "NEW-Topic", containerFactory = "kafkaListenerContainerFactory")
+    public void listner2(String s, ConsumerRecordMetadata meta) {
+        System.out.println("Consume2 : " + meta.partition() + " "+s);
     }
 }
