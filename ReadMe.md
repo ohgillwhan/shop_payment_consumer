@@ -158,8 +158,15 @@ https://stackoverflow.com/questions/50895344/spring-kafka-and-number-of-topic-co
 4. AUTO_COMMIT_INTERVAL_MS_CONFIG 를 false로 하면은 수동적으로 commit이 가능하다. 중요한것은 수동으로
 5. KafkaListenerContainerFactory의 구현체는 ConcurrentKafkaListenerContainerFactory 밖에 없다
 6. ConcurrentKafkaListenerContainerFactory의 concurrency는 동시에 데이터를 읽을 갯수이다.
-7.  
+
 # 15일차
 1. Kafka 코드 적용하기(test말고)
 2. 물건 주문시 메세지 발행하기
-3. 16일차 작성 
+3. 16일차 작성
+
+## 회고
+아주 간단한거 같다..
+
+# 16일차
+1. 다른 서브 프로젝트에서 Kafka에서 Consume해와서 N초뒤에 랜덤적으로 결제완료 / 결제불가로 변경
+2. 17일차 작성

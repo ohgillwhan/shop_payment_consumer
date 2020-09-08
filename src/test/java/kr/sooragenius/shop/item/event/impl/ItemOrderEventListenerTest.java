@@ -14,6 +14,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.kafka.core.KafkaTemplate;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -25,6 +26,7 @@ class ItemOrderEventListenerTest {
     @Mock
     private final ApplicationEventPublisher applicationEventPublisher;
     private final RedisTemplate redisTemplate;
+    private final KafkaTemplate kafkaTemplate;
 
 
     private final String REDIS_STOCK_KEY = "item::1::1::stock";
@@ -33,7 +35,7 @@ class ItemOrderEventListenerTest {
     public void setUp() {
         System.out.println("setup");
 
-        orderEventListener = new ItemOrderEventListener(redisTemplate, applicationEventPublisher);
+        orderEventListener = new ItemOrderEventListener(redisTemplate, applicationEventPublisher, kafkaTemplate);
 
         redisTemplate.delete(REDIS_STOCK_KEY);
     }

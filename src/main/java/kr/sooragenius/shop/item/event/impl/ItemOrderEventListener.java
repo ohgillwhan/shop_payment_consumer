@@ -1,5 +1,7 @@
 package kr.sooragenius.shop.item.event.impl;
 
+import com.fasterxml.jackson.core.io.JsonStringEncoder;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import kr.sooragenius.shop.item.dto.ItemDTO;
 import kr.sooragenius.shop.item.dto.ItemOptionDTO;
 import kr.sooragenius.shop.item.service.ItemOptionService;
@@ -7,6 +9,7 @@ import kr.sooragenius.shop.item.service.ItemService;
 import kr.sooragenius.shop.order.dto.ItemOrderEventDTO;
 import kr.sooragenius.shop.order.service.ItemOrderService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.json.GsonJsonParser;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.io.ClassPathResource;
@@ -15,6 +18,7 @@ import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -28,6 +32,7 @@ import java.util.stream.Collectors;
 public class ItemOrderEventListener {
     private final RedisTemplate redisTemplate;
     private final ApplicationEventPublisher applicationEventPublisher;
+    private final KafkaTemplate kafkaTemplate;
     @EventListener
     public void itemOrderEvent(ItemOrderEventDTO.NewItemOrder newItemOrder) throws RuntimeException{
 
@@ -44,6 +49,8 @@ public class ItemOrderEventListener {
         applicationEventPublisher.publishEvent(ItemOrderEventDTO.NewItemOrderRollback.of(newItemOrder));
 
         if(execute.equals("fail")) throw new RuntimeException("재고가 부족합니다.");
+
+        kafkaTemplate.send("ItemOrder", newItemOrder);
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_ROLLBACK)
