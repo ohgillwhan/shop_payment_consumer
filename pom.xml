@@ -11,7 +11,7 @@
     <groupId>kr.sooragenius</groupId>
     <artifactId>shop</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>shop</name>
+    <name>shop_payment_consumer</name>
     <description>SooraGenius's Shop</description>
 
     <properties>

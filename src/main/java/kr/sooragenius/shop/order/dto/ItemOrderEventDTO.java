@@ -7,55 +7,20 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.context.ApplicationEvent;
 
+import java.io.Serializable;
+
 public class ItemOrderEventDTO {
     @Data
     @Builder @NoArgsConstructor @AllArgsConstructor
-    public static class NewItemOrder {
-        private long itemId;
-        private long optionId;
-        private long stock;
+    public static class NewItemOrder implements Serializable {
+        private long orderId;
 
-        public static Object of(ItemOrderDetailDTO.Request detailRequest) {
+        public static NewItemOrder of(ItemOrder itemOrder) {
             NewItemOrder newItemOrder = new NewItemOrder();
-            newItemOrder.itemId = detailRequest.getItemId();
-            newItemOrder.optionId = detailRequest.getOptionId();
-            newItemOrder.stock = detailRequest.getStock();
+            newItemOrder.orderId = itemOrder.getId();
 
             return newItemOrder;
         }
     }
 
-    @Data
-    @Builder @NoArgsConstructor @AllArgsConstructor
-    public static class NewItemOrderRollback {
-        private long itemId;
-        private long optionId;
-        private long stock;
-
-        public static NewItemOrderRollback of(NewItemOrder detailRequest) {
-            NewItemOrderRollback newItemOrder = new NewItemOrderRollback();
-            newItemOrder.itemId = detailRequest.getItemId();
-            newItemOrder.optionId = detailRequest.getOptionId();
-            newItemOrder.stock = detailRequest.getStock();
-
-            return newItemOrder;
-        }
-
-    }
-
-    @Data
-    @Builder @NoArgsConstructor @AllArgsConstructor
-    public static class ItemCancel {
-        private long itemId;
-        private long optionId;
-        private long stock;
-        public static ItemCancel of(ItemOrderDetailDTO.Response response) {
-            ItemCancel itemCancel = new ItemCancel();
-            itemCancel.itemId = response.getItemId();
-            itemCancel.optionId = response.getOptionId();
-            itemCancel.stock = response.getStock();
-
-            return itemCancel;
-        }
-    }
 }

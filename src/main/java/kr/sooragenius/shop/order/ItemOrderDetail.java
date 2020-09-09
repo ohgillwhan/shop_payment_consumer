@@ -1,7 +1,5 @@
 package kr.sooragenius.shop.order;
 
-import kr.sooragenius.shop.item.Item;
-import kr.sooragenius.shop.item.ItemOption;
 import kr.sooragenius.shop.order.enums.OrderStatus;
 import lombok.Getter;
 
@@ -18,51 +16,16 @@ public class ItemOrderDetail {
     @JoinColumn(name = "ITEM_ORDER_ID", referencedColumnName = "ITEM_ORDER_ID")
     private ItemOrder itemOrder;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ITEM_OPTION_ID", referencedColumnName = "ITEM_OPTION_ID")
-    private ItemOption itemOption;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ITEM_ID", referencedColumnName = "ITEM_ID")
-    private Item item;
-
-    private long amount;
-    private long discountAmount;
-    private long payAmount;
-    private long stock;
-
     @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus;
 
     protected ItemOrderDetail() {}
-    protected static ItemOrderDetail of(Item item, ItemOption itemOption, ItemOrder itemOrder, OrderStatus orderStatus, Long stock) {
-        ItemOrderDetail itemOrderDetail = new ItemOrderDetail();
-        itemOrderDetail.item = item;
-        itemOrderDetail.itemOrder = itemOrder;
-        itemOrderDetail.itemOption = itemOption;
-        itemOrderDetail.amount = item.getAmount();
-        itemOrderDetail.discountAmount = item.getDiscountAmount();
-        itemOrderDetail.payAmount = item.getPayAmount();
-        itemOrderDetail.orderStatus = orderStatus;
-        itemOrderDetail.stock = stock;
 
-        if(itemOption != null) {
-            itemOrderDetail.amount += itemOption.getPremium();
-            itemOrderDetail.payAmount += itemOption.getPremium();
+    public void updateOrderStatus(OrderStatus orderStatus) {
+        if(orderStatus == OrderStatus.COMPLETE || orderStatus == OrderStatus.CANCEL) {
+            if (getOrderStatus() == OrderStatus.WAIT) {
+                this.orderStatus = orderStatus;
+            }
         }
-
-        if(itemOrderDetail.orderStatus == null) {
-            itemOrderDetail.orderStatus = OrderStatus.WAIT;
-        }
-
-        return itemOrderDetail;
-    }
-
-    public void cancel() {
-        if(this.orderStatus == OrderStatus.CANCEL) {
-            throw new RuntimeException("취소할 수 없는 상태입니다.");
-        }
-        this.orderStatus = OrderStatus.CANCEL;
-
     }
 }
