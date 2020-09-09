@@ -170,3 +170,4 @@ https://stackoverflow.com/questions/50895344/spring-kafka-and-number-of-topic-co
 # 16일차
 1. 다른 서브 프로젝트에서 Kafka에서 Consume해와서 N초뒤에 랜덤적으로 결제완료 / 결제불가로 변경
 2. 17일차 작성
+  

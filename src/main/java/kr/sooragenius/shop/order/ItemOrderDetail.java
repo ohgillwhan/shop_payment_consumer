@@ -51,6 +51,10 @@ public class ItemOrderDetail {
             itemOrderDetail.payAmount += itemOption.getPremium();
         }
 
+        if(itemOrderDetail.orderStatus == null) {
+            itemOrderDetail.orderStatus = OrderStatus.WAIT;
+        }
+
         return itemOrderDetail;
     }
 
